@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Change Management — Case-Based Exam (40 Questions)</title>
+<title>Change Management</title>
 <style>
   :root{font-family:Arial,Helvetica,sans-serif;color:#0f172a}
   body{background:#f3f4f6;margin:0;padding:20px;line-height:1.45}
@@ -28,7 +28,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>Change Management — Case-Based Exam (40 Questions)</h1>
+    <h1>Change Management</h1>
     <div class="timer" id="timer">40:00</div>
   </header>
 
@@ -42,16 +42,19 @@
     <p id="codeError" class="muted" style="color:#b91c1c;display:none;margin-top:8px">Incorrect code. Try again.</p>
   </div>
 
-  <!-- exam form -->
   <form id="examForm" class="card" autocomplete="off" style="display:none">
     <label>Student Name</label>
     <input id="studentName" type="text" placeholder="Last name, First name" />
-    <p class="meta">Instructions: Each item is a short case — select the most appropriate change-management practice or approach. Questions and choices are randomized on each load.</p>
+    <p class="meta">Instructions: Select the best answer. Questions and visible choices will be randomized each load. Default focus remains on <em>-- Select Answer --</em>.</p>
 
     <div id="questions">
-      <!-- All question blocks include data-qid attributes matching original order (1..40) -->
-      <!-- 1 -->
-   <!-- 1 -->
+      <!-- Each question has data-qid attribute representing original 1..40 order.
+           The provided correct answer key (original order) is:
+           ["A","B","C","D","A","B","D","C","A","B",
+            "C","D","A","B","C","A","D","B","A","C",
+            "B","A","C","D","B","A","C","D","A","B",
+            "C","D","A","B","C","A","D","B","A","C"]
+      -->
 <div class="question" data-qid="1">
   <div class="qcase">Case 1 — An executive sponsor has gradually stepped back after a major transformation kickoff. Employees are confused about the purpose of upcoming milestones and rumor mills begin to fill the gap.</div>
   <div class="small">Which immediate action would best rebuild confidence and restore program direction?</div>
@@ -611,7 +614,6 @@
   </select>
 </div>
 
-
     </div>
 
     <div style="display:flex;gap:10px;align-items:center;margin-top:10px">
@@ -625,21 +627,24 @@
 
 <script>
 (function(){
-  // === CONFIG ===
-  const ACCESS_CODE = "SIR-ALJUT-4-3";
-  const PASS_PERCENT = 85;
+  // === Config ===
+  const ACCESS_CODE = "MI-A-UY";
+  const PASS_PERCENT = 80;
   const START_SECONDS = 40 * 60;
   let totalSeconds = START_SECONDS, timerInterval = null, examStarted = false;
 
-  // === ORIGINAL CORRECT ANSWER KEY (matches data-qid order 1..40) ===
+  // === Original correct answers in the original question order (1..40) ===
   const originalCorrect = [
-    "A","B","D","C","A","B","B","A","B","C",
+     "A","B","D","C","A","B","B","A","B","C",
     "A","D","C","B","A","B","D","C","A","B",
     "C","A","D","B","C","A","B","D","A","C",
     "B","D","C","A","B","A","C","D","A","B"
   ];
 
-  // Elements
+  // running correct answers will be remapped after randomization
+  let correctAnswers = originalCorrect.slice();
+
+  // === Elements ===
   const timerEl = document.getElementById('timer');
   const examForm = document.getElementById('examForm');
   const accessSection = document.getElementById('accessCodeSection');
@@ -649,9 +654,6 @@
   const downloadBtn = document.getElementById('downloadBtn');
   const submitMsg = document.getElementById('submitMsg');
   const questionsContainer = document.getElementById('questions');
-
-  // current correct answers array (will be remapped after randomization)
-  let correctAnswers = originalCorrect.slice();
 
   // Timer functions
   function updateTimerDisplay(){
@@ -686,7 +688,6 @@
   document.addEventListener('keydown', e => {
     if((e.ctrlKey || e.metaKey) && ['c','x','u','s','a','p'].includes(e.key.toLowerCase())) e.preventDefault();
   });
-
   function resetExam(reason){
     if(!examStarted) return;
     alert('Exam reset due to ' + reason + '. The page will reload.');
@@ -694,60 +695,6 @@
   }
   document.addEventListener('visibilitychange', ()=> { if(document.hidden && examStarted) resetExam('tab change'); });
   window.addEventListener('blur', ()=> { if(examStarted) resetExam('window minimize or focus loss'); });
-
-  // Fisher-Yates shuffle (non-destructive copy option)
-  function shuffleArray(arr){
-    for(let i=arr.length-1;i>0;i--){
-      const j = Math.floor(Math.random()*(i+1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-  }
-
-  // RANDOMIZER: shuffle question blocks & options, rebuild correctAnswers mapping
-  function randomizeQuestionsAndAnswers(){
-    // get question nodes as an array
-    const blocks = Array.from(questionsContainer.querySelectorAll('.question'));
-
-    // shuffle blocks
-    shuffleArray(blocks);
-
-    // newCorrectAnswers will be built based on new order
-    const newCorrect = [];
-
-    // re-append blocks in shuffled order, reassign select names q1..qN, shuffle options within each
-    blocks.forEach((block, idx) => {
-      // Determine original qid for this block
-      const qid = parseInt(block.getAttribute('data-qid'), 10); // original 1-based index
-      // Map original correct answer for that qid into the new position
-      const origIndex = qid - 1;
-      newCorrect[idx] = originalCorrect[origIndex];
-
-      // shuffle options inside the select but KEEP option.value (A/B/C/D) unchanged so value semantics remain
-      const select = block.querySelector('select');
-      if(select){
-        // extract placeholder and options (excluding placeholder)
-        const placeholder = select.querySelector('option[value=""]');
-        const opts = Array.from(select.querySelectorAll('option')).filter(o => o.value !== "");
-        shuffleArray(opts);
-        // clear and re-add placeholder then shuffled opts
-        select.innerHTML = '';
-        select.appendChild(placeholder);
-        opts.forEach(o => select.appendChild(o));
-      }
-
-      // rename select to the new sequential name (q1..q40)
-      const newName = 'q' + (idx + 1);
-      const selectElem = block.querySelector('select');
-      if(selectElem) selectElem.name = newName;
-
-      // append block back into container in new order
-      questionsContainer.appendChild(block);
-    });
-
-    // set the running correctAnswers to the new mapped array
-    correctAnswers = newCorrect.slice();
-  }
 
   // Access code start logic
   examCodeBtn.addEventListener('click', function(){
@@ -759,8 +706,7 @@
       totalSeconds = START_SECONDS;
       updateTimerDisplay();
       startTimer();
-      // Randomize after exam is shown
-      randomizeQuestionsAndAnswers();
+      randomizeQuestionsAndAnswers(); // randomize after showing exam
     } else {
       codeError.style.display = 'block';
     }
@@ -816,26 +762,78 @@
 
     const blob = new Blob([report.join('\n')], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
+
+    // 🔐 Secure Download - Password Required
+    window.reportData = report.join('\n');
     downloadBtn.disabled = false;
     downloadBtn.onclick = function(){
+      const ANSWER_DOWNLOAD_PASSWORD = "PUYA-UY-0"; // Instructor password
+      const pwd = prompt("Enter Instructor Password to Download Results:");
+
+      if(pwd !== ANSWER_DOWNLOAD_PASSWORD){
+        alert("❌ Incorrect Password — Download Blocked");
+        return;
+      }
+
       const a = document.createElement('a');
       a.href = url;
       a.download = (name.replace(/\s+/g,'_') || 'answers') + '_results.txt';
       document.body.appendChild(a);
       a.click();
-      setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); },3000);
+      setTimeout(()=>{
+        URL.revokeObjectURL(url);
+        a.remove();
+      },3000);
     };
 
-    // disable form after submission to prevent re-submit tampering (but keep download enabled)
     examForm.querySelectorAll('select,input,button').forEach(el => {
       if(el !== downloadBtn) el.disabled = true;
     });
   }
 
-  // initial timer display
-  updateTimerDisplay();
+  // === RANDOMIZER FUNCTION ===
+  function shuffleArray(arr){
+    for(let i=arr.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [arr[i],arr[j]]=[arr[j],arr[i]];
+    }
+    return arr;
+  }
 
+  function randomizeQuestionsAndAnswers(){
+    const container = questionsContainer;
+    const blocks = Array.from(container.querySelectorAll('.question'));
+
+    const shuffled = shuffleArray(blocks.slice());
+    const newCorrect = [];
+    container.innerHTML = '';
+
+    shuffled.forEach((block, idx) => {
+      container.appendChild(block);
+
+      const origQid = parseInt(block.getAttribute('data-qid'), 10);
+      newCorrect[idx] = originalCorrect[origQid - 1];
+
+      const select = block.querySelector('select');
+      if(select){
+        const placeholder = Array.from(select.options).find(o => o.value === "");
+        const opts = Array.from(select.options).filter(o => o.value !== "");
+        shuffleArray(opts);
+        select.innerHTML = "";
+        if(placeholder) select.appendChild(placeholder);
+        opts.forEach(o => select.appendChild(o));
+        select.name = 'q' + (idx + 1);
+      }
+    });
+
+    correctAnswers = newCorrect.slice();
+  }
+
+  updateTimerDisplay();
 })();
 </script>
+
+
+
 </body>
 </html>
